@@ -1,7 +1,7 @@
 import { MongoClient, Db, Collection } from 'mongodb';
 import crypto from 'crypto';
-import { Session } from '../src/types';
-import { INITIAL_SESSIONS } from '../src/data';
+import { Session } from '../src/types.js';
+import { INITIAL_SESSIONS } from '../src/data.js';
 
 // Globally cache the MongoDB client and database connections across serverless function invocations
 let cachedClient: MongoClient | null = null;
