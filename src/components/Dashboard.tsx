@@ -419,6 +419,8 @@ export default function Dashboard() {
                   </label>
                   <input
                     type="text"
+                    name="username"
+                    autoComplete="username"
                     required
                     placeholder="e.g. johndoe"
                     value={authUsername}
@@ -433,6 +435,8 @@ export default function Dashboard() {
                   </label>
                   <input
                     type="password"
+                    name="password"
+                    autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
                     required
                     placeholder="••••••••"
                     value={authPassword}
