@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Remix: Deutsch Fokus",
+  "description": "A minimalist German Language study tracker designed for mastering Speaking, Reading, Writing, and Listening with focused study sessions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
