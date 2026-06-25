@@ -382,7 +382,7 @@ export default function Dashboard() {
       {isLoading ? (
         <div className="flex-1 flex flex-col items-center justify-center py-24 animate-pulse">
           <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-          <span className="text-xs font-mono text-slate-400 mt-4 tracking-widest uppercase">Syncing Portals...</span>
+          <span className="text-xs font-mono text-slate-400 mt-4 tracking-widest uppercase">Syncing sessions...</span>
         </div>
       ) : (!user && !shareUserId) ? (
         <div className="flex-1 flex items-center justify-center py-12 px-4">
@@ -402,7 +402,7 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                   {authMode === 'login' 
                     ? 'Sign in to access and sync your study and learning progress from any device.' 
-                    : 'Create an account to start syncing your studies securely with MongoDB.'}
+                    : 'Create an account to track and sync your study sessions securely across all devices.'}
                 </p>
               </div>
 
