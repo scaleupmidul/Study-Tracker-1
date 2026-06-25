@@ -9,6 +9,7 @@ let cachedDb: Db | null = null;
 
 // Fallback in-memory storage for when MONGODB_URI is not provided
 let inMemorySessions: Session[] = [];
+const seededInMemoryUsers = new Set<string>();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-deep-focus-german-app';
 
@@ -156,17 +157,29 @@ export async function fetchSessions(userId: string): Promise<Session[]> {
   if (dbObj && dbObj.sessionsCollection) {
     try {
       const docs = await dbObj.sessionsCollection.find({ userId }).toArray();
-      // Seed initial sessions for this user if they don't have any sessions yet
-      if (docs.length === 0) {
-        console.log(`🌱 Seeding initial sessions for user ${userId} in MongoDB...`);
-        const userInitial = INITIAL_SESSIONS.map((s, index) => ({
-          ...s,
-          id: `s-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 4)}`,
-          userId
-        }));
-        await dbObj.sessionsCollection.insertMany(userInitial);
-        return userInitial;
+      
+      // Look up the user to check if they have already been seeded.
+      // This prevents re-seeding demo data if the user intentionally deletes all their sessions.
+      const usersCollection = dbObj.db.collection('users');
+      const userDoc = await usersCollection.findOne({ id: userId });
+      
+      if (userDoc && !userDoc.seeded) {
+        if (docs.length === 0) {
+          console.log(`🌱 Seeding initial sessions for user ${userId} in MongoDB...`);
+          const userInitial = INITIAL_SESSIONS.map((s, index) => ({
+            ...s,
+            id: `s-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 4)}`,
+            userId
+          }));
+          await dbObj.sessionsCollection.insertMany(userInitial);
+          await usersCollection.updateOne({ id: userId }, { $set: { seeded: true } });
+          return userInitial;
+        } else {
+          // They already have some data, mark as seeded to prevent future auto-seeding
+          await usersCollection.updateOne({ id: userId }, { $set: { seeded: true } });
+        }
       }
+      
       return docs.map(doc => {
         const { _id, ...sessionData } = doc as any;
         return sessionData as Session;
@@ -178,14 +191,17 @@ export async function fetchSessions(userId: string): Promise<Session[]> {
   
   // In-memory fallback
   const userSessions = inMemorySessions.filter(s => s.userId === userId);
-  if (userSessions.length === 0) {
-    const userInitial = INITIAL_SESSIONS.map((s, index) => ({
-      ...s,
-      id: `s-${Date.now()}-${index}`,
-      userId
-    }));
-    inMemorySessions.push(...userInitial);
-    return userInitial;
+  if (!seededInMemoryUsers.has(userId)) {
+    seededInMemoryUsers.add(userId);
+    if (userSessions.length === 0) {
+      const userInitial = INITIAL_SESSIONS.map((s, index) => ({
+        ...s,
+        id: `s-${Date.now()}-${index}`,
+        userId
+      }));
+      inMemorySessions.push(...userInitial);
+      return userInitial;
+    }
   }
   return userSessions;
 }
@@ -234,12 +250,16 @@ export async function resetSessions(userId: string): Promise<boolean> {
         userId
       }));
       await dbObj.sessionsCollection.insertMany(userInitial);
+      
+      const usersCollection = dbObj.db.collection('users');
+      await usersCollection.updateOne({ id: userId }, { $set: { seeded: true } });
       return true;
     } catch (e) {
       console.error('Failed to reset MongoDB, resetting in-memory:', e);
     }
   }
   inMemorySessions = inMemorySessions.filter(s => s.userId !== userId);
+  seededInMemoryUsers.add(userId);
   const userInitial = INITIAL_SESSIONS.map((s, index) => ({
     ...s,
     id: `s-${Date.now()}-${index}`,
